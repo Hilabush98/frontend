@@ -37,7 +37,7 @@ export function LoginForm({
     },
   })
   const [isLoading, setIsloading] = useState(false)
-  const simulatePetition = async (time: number, res: boolean) => {
+  /*const simulatePetition = async (time: number, res: boolean, setIsLoading:void) => {
     const dataRes = await new Promise((resolve) => {
       setTimeout(() => {
         if (res) {
@@ -47,13 +47,13 @@ export function LoginForm({
           resolve(false)
           setIsloading(false)
         }
-      }, time * 1000)
+      }, time * 1000)s
     })
     return dataRes
-  }
+  }*/
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsloading(true)
-    const resolution = await simulatePetition(2, true)
+    const resolution = await fetch(2, true)
     if (resolution) {
       console.log(data)
     } else {
