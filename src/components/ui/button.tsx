@@ -64,4 +64,40 @@ function Button({
   )
 }
 
-export { Button }
+const DEFAULT_EXTRA_PROPS = {
+  title: "Button",
+};
+function ButtonCustom({
+  className,
+  extraProps = DEFAULT_EXTRA_PROPS,
+  type = "button",
+  variant = "default",
+  size = "default",
+  loading = false,
+  disabled = false,
+  placeHolder = "Button",
+  ...props
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    placeHolder?: string,
+    loading?: boolean,
+    disabled?: boolean,
+    extraProps?: {
+      title?: string,
+    },
+  }) {
+
+
+  return (<ButtonPrimitive
+    data-slot="button"
+    onClick={(e) => { console.log(e) }}
+    disabled={loading || disabled}
+    className={cn(buttonVariants({ variant, size, className }))}
+    {...props}
+  >
+    {loading && <Spinner className="mr-2 h-4 w-4" />}
+    {placeHolder}
+  </ButtonPrimitive>)
+}
+
+export { Button, ButtonCustom }
