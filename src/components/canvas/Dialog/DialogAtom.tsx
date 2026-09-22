@@ -49,14 +49,15 @@ return (
 
 export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
     // 1. Estado local de propiedades a editar
+    console.log(grid)
     const [propsState, setPropsState] = useState<any>({});
     console.log("element:", elementToEdit)
     // 2. Cargamos las propiedades existentes al abrir el modal
     useEffect(() => {
         if (elementToEdit) {
             setPropsState({
-                text: elementToEdit.props?.placeHolder || "Button",
-                disabled: elementToEdit.props?.disabled || false
+                text: elementToEdit.props?.componentProps?.placeHolder || "Button",
+                disabled: elementToEdit.props?.componentProps?.disabled || false
             });
         }
     }, [elementToEdit]);
@@ -90,7 +91,7 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                         }),
                         props: {
                             ...col.props,
-                            ...propsState
+                            componentProps: { ...propsState }
                         }
                     };
                 }

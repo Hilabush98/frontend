@@ -5,7 +5,7 @@ import { ToolsPanel } from "./tool-panel/tools-panel"
 import { DragDropProvider } from '@dnd-kit/react';
 import { RestrictToWindow } from '@dnd-kit/dom/modifiers';
 import { RestrictToVerticalAxis } from '@dnd-kit/abstract/modifiers';
-import { Plus, PlusIcon, TrashIcon, SaveIcon } from 'lucide-react';
+import { Plus, PlusIcon, TrashIcon, SaveIcon, Columns } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DialogAtom } from "./Dialog/DialogAtom"
 
@@ -14,8 +14,8 @@ import { Button, ButtonCustom } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { DialogDemo } from '../ui/dialog'
-type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any } };
-type RowData = { id: string; columns: CellData[] };
+type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any }, position: number };
+type RowData = { id: string; columns: CellData[], };
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -33,7 +33,7 @@ export function CanvasPanel({
 
 
     const [grid, setGrid] = useState<RowData[]>([
-        { id: `row-${generateId()}`, columns: [{ id: `cell-${generateId()}`, element: null }] }
+        { id: `row-${generateId()}`, columns: [{ id: `cell-${generateId()}`, element: null, position: 0 }] }
     ]);
     const dggItems = [
         <Draggable id="btn-id" key="btn-id">
@@ -69,16 +69,18 @@ export function CanvasPanel({
 
     const [elementsList] = useState<any>(dggItems);
     const addRow = () => {
+        console.log('addRow')
         const newRow: RowData = {
             id: `row-${generateId()}`,
-            columns: [{ id: `cell-${generateId()}`, element: null }]
+            columns: [{ id: `cell-${generateId()}`, element: null, position: 0 }]
         };
         setGrid([...grid, newRow]);
     };
     const addColumnToRow = (rowId: string) => {
         setGrid(grid.map(row => {
+            console.log('add row : ', row)
             if (row.id === rowId) {
-                const newColumn: CellData = { id: `cell-${generateId()}`, element: null };
+                const newColumn: CellData = { id: `cell-${generateId()}`, element: null, position: row.columns.length };
                 return { ...row, columns: [...row.columns, newColumn] };
             }
             return row;
@@ -104,7 +106,7 @@ export function CanvasPanel({
                 if (col.element && (col.element as any).props?.id) {
                     elementType = String((col.element as any).props.id).split('-')[0];
                 }
-                return { cellId: col.id, type: elementType, props: col.props };
+                return { cellId: col.id, type: elementType, props: col.props, position: col.position };
             })
         }));
 
@@ -127,10 +129,11 @@ export function CanvasPanel({
     const handleDeleteCell = (cellId: string, hasElement: boolean) => {
         setGrid(prevGrid => {
             const newGrid = prevGrid.map(row => {
+                console.log('ROW', row)
                 if (hasElement) {
                     return {
                         ...row,
-                        columns: row.columns.map(col => col.id === cellId ? { ...col, element: null } : col)
+                        columns: row.columns.map(col => col.id === cellId ? { ...col, element: null, props: { ...col.props, componentProps: null } } : col)
                     };
                 } else {
                     return {
@@ -151,9 +154,10 @@ export function CanvasPanel({
             if (rowIndex === -1) return prevGrid;
 
             // 2. Creamos la cantidad exacta de celdas vacías que tiene la fila superior
-            const newColumns = Array.from({ length: numColumns }).map(() => ({
+            const newColumns = Array.from({ length: numColumns }).map((_, index) => ({
                 id: `cell-${generateId()}`,
-                element: null
+                element: null,
+                position: index
             }));
 
             const newRow = {
@@ -187,6 +191,7 @@ export function CanvasPanel({
         const activeId = active?.id;
         const overId = over?.id;
         const activeData = active?.data?.current || (event.operation?.source?.data);
+        console.log('active data', active)
 
         // 🟢 CASO 1: MOVER DE CELDA A CELDA (INTERCAMBIO / SWAP)
         if (activeData?.type === 'cell-atom') {
@@ -197,26 +202,33 @@ export function CanvasPanel({
             setGrid(prevGrid => {
                 let sourceElement: React.ReactNode = null;
                 let targetElement: React.ReactNode = null;
-
+                let sourcePosition = 0;
+                let targetPosition = 0;
                 // Paso A: Encontramos qué elemento hay en el Origen y qué hay en el Destino
                 prevGrid.forEach(row => {
                     row.columns.forEach(col => {
-                        if (col.id === sourceCellId) sourceElement = col.element;
-                        if (col.id === overId) targetElement = col.element;
+                        console.log('columna', col)
+                        console.log('entra source', sourceCellId === col.id)
+                        console.log('entra targer', overId === col.id)
+                        if (col.id === sourceCellId) { sourceElement = col.element; sourcePosition = col.position; console.log('source position', col.position); }
+                        if (col.id === overId) { targetElement = col.element; targetPosition = col.position; console.log('target position', col.position); }
                     });
                 });
-
+                console.log('sourceid', sourceCellId)
+                console.log('overid', overId)
                 // Paso B: Retornamos el grid intercambiando los elementos
                 return prevGrid.map(row => ({
                     ...row,
                     columns: row.columns.map(col => {
                         // A la celda original le asignamos lo que había en el destino
                         if (col.id === sourceCellId) {
-                            return { ...col, element: targetElement };
+                            console.log('COL ACTUAL SWAP SOURCE', col)
+                            return { ...col, element: targetElement, position: targetPosition };
                         }
                         // A la celda de destino le asignamos el átomo que venimos arrastrando
                         if (col.id === overId) {
-                            return { ...col, element: sourceElement };
+                            console.log('COL ACTUAL SWAP target', col)
+                            return { ...col, element: sourceElement, position: sourcePosition };
                         }
                         return col;
                     })
@@ -238,7 +250,7 @@ export function CanvasPanel({
                     ...row,
                     columns: row.columns.map(col =>
                         // Si arrastramos una herramienta nueva a una celda ocupada, reemplaza el contenido
-                        col.id === overId ? { ...col, element: newElement } : col
+                        col.id === overId ? { ...col, element: newElement, props: { ...col.props, componentProps: null } } : col
                     )
                 })));
             }
