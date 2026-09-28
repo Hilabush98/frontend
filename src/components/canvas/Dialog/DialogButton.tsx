@@ -7,16 +7,28 @@ import { Label } from '@/components/ui/label';
 import { any } from "zod";
 
 
-export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
-    // 1. Estado local de propiedades a editar
-    const [propsState, setPropsState] = useState<any>({});
-    console.log("element:", elementToEdit)
-    // 2. Cargamos las propiedades existentes al abrir el modal
+export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
+
+    // 1. Estado inicializado con valores por defecto para evitar warnings de inputs descontrolados
+    const [propsState, setPropsState] = useState<any>({
+        text: "Button",
+        disabled: false,
+        variant: "default",
+        size: "sm"
+    });
+
+    console.log("element:", elementToEdit);
+
+    // 2. Cargamos las propiedades existentes al abrir el modal (Unificando propiedades)
     useEffect(() => {
         if (elementToEdit) {
+            console.log(elementToEdit)
             setPropsState({
-                text: elementToEdit.props?.placeHolder || "Button",
-                disabled: elementToEdit.props?.disabled || false
+                // Usamos 'text' de forma consistente. Si antes usabas 'placeHolder', unifícalo aquí
+                text: elementToEdit.props?.text || elementToEdit.props?.placeHolder || "Button",
+                disabled: elementToEdit.props?.disabled || false,
+                variant: elementToEdit.props?.variant || "default",
+                size: elementToEdit.props?.size || "sm"
             });
         }
     }, [elementToEdit]);
@@ -29,28 +41,30 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
             ...row,
             columns: row.columns.map(col => {
                 if (col.id === elementToEdit.id) {
-                    console.log("col", col)
+                    console.log("col", col);
+
                     // 🔴 1. Regeneramos el JSX visual del botón con las nuevas propiedades
                     const updatedVisualElement = (
-                        <Button
-                            variant={propsState.variant || "default"}
-                            size={propsState.size || "sm"}
+                        <ButtonCustom
+                            variant={propsState.variant}
+                            size={propsState.size}
                             disabled={propsState.disabled}
                         >
-                            {propsState.text || "Button"}
-                        </Button>
+                            {propsState.text}
+                        </ButtonCustom>
                     );
-
+ARREGLAR EL PROPS
                     // 🔴 2. Guardamos tanto el nuevo elemento visual como los props actualizados
                     return {
                         ...col,
                         element: React.cloneElement(updatedVisualElement, {
                             id: col.element?.props?.id,
-                            ctype: col.element?.props?.ctype
+                            ctype: col.element?.props?.ctype,
+                            props: { ...col.element.props }
                         }),
                         props: {
                             ...col.props,
-                            ...propsState
+                            ...propsState // Guarda 'text', 'disabled', etc.
                         }
                     };
                 }
@@ -62,7 +76,6 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
         setElementToEdit(null);
     };
 
-
     return (
         <Dialog open={!!elementToEdit} onOpenChange={(open) => !open && setElementToEdit(null)}>
             <DialogContent>
@@ -71,26 +84,33 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-4">
-                    {/* Vista previa */}
+                    {/* 👁️ Vista previa (Se re-renderiza inmediatamente gracias a propsState) */}
                     <div className="flex justify-center p-4 border rounded-md bg-muted/20">
-                        {elementToEdit?.element}
+                        <ButtonCustom
+                            variant={propsState.variant}
+                            size={propsState.size}
+                            disabled={propsState.disabled}
+                        >
+                            {propsState.text}
+                        </ButtonCustom>
                     </div>
 
-                    {/* Controles de edición */}
+                    {/* ✍️ Controles de edición */}
                     <div className="flex flex-col gap-2">
-                        <Label>Texto del botón</Label>
+                        <Label htmlFor="btn-text">Texto del botón</Label>
                         <Input
+                            id="btn-text"
                             value={propsState.text}
                             onChange={(e) => setPropsState(prev => ({ ...prev, text: e.target.value }))}
                         />
                     </div>
 
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                         <input
                             type="checkbox"
                             checked={propsState.disabled}
                             onChange={(e) => setPropsState(prev => ({ ...prev, disabled: e.target.checked }))}
-                            className="w-4 h-4"
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         Deshabilitado
                     </label>

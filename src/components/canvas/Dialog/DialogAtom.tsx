@@ -48,12 +48,16 @@ return (
 }*/
 
 export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
+    type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any }, position: number };
+    type RowData = { id: string; columns: CellData[], };
+
     // 1. Estado local de propiedades a editar
     console.log(grid)
     const [propsState, setPropsState] = useState<any>({});
     console.log("element:", elementToEdit)
     // 2. Cargamos las propiedades existentes al abrir el modal
     useEffect(() => {
+        console.log('ElementToEdit', elementToEdit?.props?.componentProps)
         if (elementToEdit) {
             setPropsState({
                 text: elementToEdit.props?.componentProps?.placeHolder || "Button",
@@ -62,25 +66,40 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
         }
     }, [elementToEdit]);
 
+    const componentList = (props: any) => {
+        const { ctype } = props
+        switch (ctype) {
+            case "button": (<Button
+                variant={props.variant || "default"}
+                size={props.size || "sm"}
+                disabled={props.disabled}
+            >
+                {props.text || "Button"}
+            </Button>)
+                break;
+            case "label":
+                break;
+            case "combo":
+                break;
+            case "textArea":
+                break;
+            case "input":
+                break;
+            default:
+                break;
+        }
+    }
     // 3. Función para guardar los cambios en el grid
     const saveProps = () => {
         if (!elementToEdit) return;
 
-        setGrid((prevGrid: any[]) => prevGrid.map(row => ({
+        setGrid((prevGrid: RowData[]) => prevGrid.map(row => ({
             ...row,
             columns: row.columns.map(col => {
                 if (col.id === elementToEdit.id) {
                     console.log("col", col)
                     // 🔴 1. Regeneramos el JSX visual del botón con las nuevas propiedades
-                    const updatedVisualElement = (
-                        <Button
-                            variant={propsState.variant || "default"}
-                            size={propsState.size || "sm"}
-                            disabled={propsState.disabled}
-                        >
-                            {propsState.text || "Button"}
-                        </Button>
-                    );
+                    const updatedVisualElement = componentList()
 
                     // 🔴 2. Guardamos tanto el nuevo elemento visual como los props actualizados
                     return {
@@ -89,10 +108,12 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                             id: col.element?.props?.id,
                             ctype: col.element?.props?.ctype
                         }),
+
                         props: {
                             ...col.props,
                             componentProps: { ...propsState }
-                        }
+                        },
+                        position: col.position
                     };
                 }
                 return col;
@@ -112,7 +133,6 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-4">
-                    {/* Vista previa */}
                     <div className="flex justify-center p-4 border rounded-md bg-muted/20">
                         {elementToEdit?.element}
                     </div>
@@ -122,7 +142,7 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                         <Label>Texto del botón</Label>
                         <Input
                             value={propsState.text}
-                            onChange={(e) => setPropsState(prev => ({ ...prev, text: e.target.value }))}
+                            onChange={(e) => setPropsState((prev: any) => ({ ...prev, text: e.target.value }))}
                         />
                     </div>
 
@@ -130,7 +150,7 @@ export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: a
                         <input
                             type="checkbox"
                             checked={propsState.disabled}
-                            onChange={(e) => setPropsState(prev => ({ ...prev, disabled: e.target.checked }))}
+                            onChange={(e) => setPropsState((prev: any) => ({ ...prev, disabled: e.target.checked }))}
                             className="w-4 h-4"
                         />
                         Deshabilitado

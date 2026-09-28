@@ -7,14 +7,14 @@ import { RestrictToWindow } from '@dnd-kit/dom/modifiers';
 import { RestrictToVerticalAxis } from '@dnd-kit/abstract/modifiers';
 import { Plus, PlusIcon, TrashIcon, SaveIcon, Columns } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { DialogAtom } from "./Dialog/DialogAtom"
+import { DialogAtomButton } from "./Dialog/DialogButton"
 
 import { Draggable, Sortable, SortableItem } from './tool-panel/tools-panel-utils';
 import { Button, ButtonCustom } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { DialogDemo } from '../ui/dialog'
-type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any }, position: number };
+type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any }, position: number, sizeCell: number };
 type RowData = { id: string; columns: CellData[], };
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -33,33 +33,33 @@ export function CanvasPanel({
 
 
     const [grid, setGrid] = useState<RowData[]>([
-        { id: `row-${generateId()}`, columns: [{ id: `cell-${generateId()}`, element: null, position: 0 }] }
+        { id: `row-${generateId()}`, columns: [{ id: `cell-${generateId()}`, element: null, position: 0, sizeCell: 1 }] }
     ]);
     const dggItems = [
         <Draggable id="btn-id" key="btn-id">
-            <div className={cn("flex items-center justify-center rounded-sm h-8 border bg")}>
+            <div className="flex items-center justify-center w-full min-h-8">
                 <Button size={"sm"} className={cn("")}>Button</Button>
             </div>
-
         </Draggable>,
         <Draggable id="btnc-id" ctype="button" key="btnc-id">
-            <ButtonCustom />
+            <div className="flex items-center justify-center w-full min-h-8">
+                <ButtonCustom />
+            </div>
         </Draggable>,
         <Draggable id="lbl-id" ctype="label" key="lbl-id">
-            <div className={cn("content-center rounded-sm justify-items-center h-8 border bg")}>
+            <div className="flex items-center justify-center w-full min-h-8">
                 <Label>Label</Label>
             </div>
         </Draggable>,
         <Draggable id="ipt-id" ctype="input" key="ipt-id">
-            <div className={cn("rounded-sm h-8")}>
+            <div className="flex items-center justify-center   min-h-8" >
                 <Input
-                    className={cn("h-full text-center rounded-sm bg-transparent")}
+                    className={cn("text-center rounded-sm bg-transparent w-25")}
                     placeholder="Input" disabled />
             </div>
         </Draggable>,
         <Draggable id="dlg-id" key={"dlg-id"}>
-            <div className={cn("flex items-center justify-center rounded-sm h-8 border bg")}>
-
+            <div className="flex items-center justify-center w-full min-h-8">
                 <DialogDemo></DialogDemo>
             </div>
 
@@ -69,18 +69,17 @@ export function CanvasPanel({
 
     const [elementsList] = useState<any>(dggItems);
     const addRow = () => {
-        console.log('addRow')
+        console.log(grid)
         const newRow: RowData = {
             id: `row-${generateId()}`,
-            columns: [{ id: `cell-${generateId()}`, element: null, position: 0 }]
+            columns: [{ id: `cell-${generateId()}`, element: null, position: 0, sizeCell: 1 }]
         };
         setGrid([...grid, newRow]);
     };
     const addColumnToRow = (rowId: string) => {
         setGrid(grid.map(row => {
-            console.log('add row : ', row)
             if (row.id === rowId) {
-                const newColumn: CellData = { id: `cell-${generateId()}`, element: null, position: row.columns.length };
+                const newColumn: CellData = { id: `cell-${generateId()}`, element: null, position: row.columns.length, sizeCell: 1 };
                 return { ...row, columns: [...row.columns, newColumn] };
             }
             return row;
@@ -106,7 +105,7 @@ export function CanvasPanel({
                 if (col.element && (col.element as any).props?.id) {
                     elementType = String((col.element as any).props.id).split('-')[0];
                 }
-                return { cellId: col.id, type: elementType, props: col.props, position: col.position };
+                return { cellId: col.id, type: elementType, props: col.props, position: col.position, sizeCell: col.sizeCell };
             })
         }));
 
@@ -147,6 +146,8 @@ export function CanvasPanel({
             return newGrid.filter(row => row.columns.length > 0);
         });
     };
+    console.log(grid)
+
     const insertRowBelow = (rowId: string, numColumns: number) => {
         setGrid(prevGrid => {
             // 1. Buscamos en qué posición está la fila actual
@@ -157,7 +158,8 @@ export function CanvasPanel({
             const newColumns = Array.from({ length: numColumns }).map((_, index) => ({
                 id: `cell-${generateId()}`,
                 element: null,
-                position: index
+                position: index,
+                sizeCell: numColumns
             }));
 
             const newRow = {
@@ -191,7 +193,6 @@ export function CanvasPanel({
         const activeId = active?.id;
         const overId = over?.id;
         const activeData = active?.data?.current || (event.operation?.source?.data);
-        console.log('active data', active)
 
         // 🟢 CASO 1: MOVER DE CELDA A CELDA (INTERCAMBIO / SWAP)
         if (activeData?.type === 'cell-atom') {
@@ -204,31 +205,27 @@ export function CanvasPanel({
                 let targetElement: React.ReactNode = null;
                 let sourcePosition = 0;
                 let targetPosition = 0;
+                let SourceCustomProps;
+                let targetCustomProps;
                 // Paso A: Encontramos qué elemento hay en el Origen y qué hay en el Destino
                 prevGrid.forEach(row => {
                     row.columns.forEach(col => {
-                        console.log('columna', col)
-                        console.log('entra source', sourceCellId === col.id)
-                        console.log('entra targer', overId === col.id)
-                        if (col.id === sourceCellId) { sourceElement = col.element; sourcePosition = col.position; console.log('source position', col.position); }
-                        if (col.id === overId) { targetElement = col.element; targetPosition = col.position; console.log('target position', col.position); }
+                        if (col.id === sourceCellId) { sourceElement = col.element; sourcePosition = col.position; SourceCustomProps = { ...col.props } }
+                        if (col.id === overId) { targetElement = col.element; targetPosition = col.position; targetCustomProps = { ...col.props } }
                     });
                 });
-                console.log('sourceid', sourceCellId)
-                console.log('overid', overId)
+
                 // Paso B: Retornamos el grid intercambiando los elementos
                 return prevGrid.map(row => ({
                     ...row,
                     columns: row.columns.map(col => {
                         // A la celda original le asignamos lo que había en el destino
                         if (col.id === sourceCellId) {
-                            console.log('COL ACTUAL SWAP SOURCE', col)
-                            return { ...col, element: targetElement, position: targetPosition };
+                            return { ...col, element: targetElement, props: targetCustomProps, position: targetPosition, };
                         }
                         // A la celda de destino le asignamos el átomo que venimos arrastrando
                         if (col.id === overId) {
-                            console.log('COL ACTUAL SWAP target', col)
-                            return { ...col, element: sourceElement, position: sourcePosition };
+                            return { ...col, element: sourceElement, props: SourceCustomProps, position: sourcePosition };
                         }
                         return col;
                     })
@@ -296,7 +293,7 @@ export function CanvasPanel({
                                 <Button onClick={() => handleSaveMolecule("draft")} variant="secondary" className="border border-border">
                                     <SaveIcon size={16} className="mr-2" /> Guardar Draft
                                 </Button>
-                                <Button onClick={addRow}>
+                                <Button onClick={addRow} disabled={false}>
                                     <PlusIcon size={16} className="mr-2" /> Agregar Fila
                                 </Button>
                             </div>
@@ -328,7 +325,7 @@ export function CanvasPanel({
                     </Display>
                 </div>
             </DragDropProvider>
-            <DialogAtom elementToEdit={elementToEdit} grid={grid} setGrid={setGrid} setElementToEdit={setElementToEdit} />
+            <DialogAtomButton elementToEdit={elementToEdit} grid={grid} setGrid={setGrid} setElementToEdit={setElementToEdit} />
 
         </div >
     );

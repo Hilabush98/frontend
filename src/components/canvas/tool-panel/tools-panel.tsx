@@ -32,7 +32,7 @@ export function ToolsPanel({
                         // Envolvemos sutilmente cada item para darle un contexto de "arrastrable" en el panel
                         <div key={index} className="relative group/tool">
                             {/* Icono de arrastre que aparece sutilmente */}
-                            <div className="w-full">
+                            <div className="w-full ">
                                 {drg}
                             </div>
                         </div>
