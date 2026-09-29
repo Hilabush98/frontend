@@ -196,36 +196,38 @@ export function MoleculeContainer({
                         key={row.id}
                         onMouseEnter={() => setHoveredRowId(row.id)}
                         onMouseLeave={() => setHoveredRowId(null)}
-                        className="relative flex flex-row gap-3 items-center"
+                        ARREGLAR EL FLEX BOX PARA QUE CUANDO SE COLOQUE UN SIZE 3 O 2 ESTE SE EXPANDA ESE TAMAÑO
+                        className = "relative flex flex-row gap- items-center"
                     >
-                        {/* Contenedor de las celdas */}
-                        <div className="flex flex-row gap-3 flex-1">
-                            {row.columns.map((col: any) => renderCell(col))}
+                    {/* Contenedor de las celdas */ }
+                    < div className = "flex flex-row gap-3 flex-1" >
+                    { row.columns.map((col: any) => renderCell(col)) }
                         </div>
 
-                        {/* Contenedor estático con altura fija (h-[70px]) que evita saltos y pérdidas de hover */}
-                        <div className="w-8 h-[70px] flex flex-col justify-center items-center flex-shrink-0">
-                            {hoveredRowId === row.id && (
-                                <div className="flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
-                                    <button onClick={() => onAddColumn(row.id)} disabled={row.columns.length > 5} className="bg-primary text-primary-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 shadow-sm" title="Agregar columna">
-                                        <PlusIcon size={14} />
-                                    </button>
-                                    <button onClick={() => onInsertRowBelow(row.id, row.columns.length)} disabled={grid.length > 7} className="bg-secondary text-secondary-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 border border-border shadow-sm" title="Insertar fila abajo">
-                                        <ArrowDownIcon size={14} />
-                                    </button>
-                                    {grid.length > 1 && (
-                                        <button onClick={() => onRemoveRow(row.id)} className="bg-destructive text-destructive-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 shadow-sm" title="Eliminar fila">
-                                            <TrashIcon size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
+            {/* Contenedor estático con altura fija (h-[70px]) que evita saltos y pérdidas de hover */}
+            <div className="w-8 h-[70px] flex flex-col justify-center items-center flex-shrink-0">
+                {hoveredRowId === row.id && (
+                    <div className="flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
+                        <button onClick={() => onAddColumn(row.id)} disabled={row.columns.length > 5} className="bg-primary text-primary-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 shadow-sm" title="Agregar columna">
+                            <PlusIcon size={14} />
+                        </button>
+                        <button onClick={() => onInsertRowBelow(row.id, row.columns.length)} disabled={grid.length > 7} className="bg-secondary text-secondary-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 border border-border shadow-sm" title="Insertar fila abajo">
+                            <ArrowDownIcon size={14} />
+                        </button>
+                        {grid.length > 1 && (
+                            <button onClick={() => onRemoveRow(row.id)} className="bg-destructive text-destructive-foreground w-6 h-6 rounded flex items-center justify-center hover:opacity-80 shadow-sm" title="Eliminar fila">
+                                <TrashIcon size={14} />
+                            </button>
+                        )}
                     </div>
-                ))}
+                )}
             </div>
+
         </div>
+    ))
+}
+            </div >
+        </div >
     );
 }
 

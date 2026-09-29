@@ -17,18 +17,16 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
         size: "sm"
     });
 
-    console.log("element:", elementToEdit);
 
     // 2. Cargamos las propiedades existentes al abrir el modal (Unificando propiedades)
     useEffect(() => {
         if (elementToEdit) {
-            console.log(elementToEdit)
             setPropsState({
                 // Usamos 'text' de forma consistente. Si antes usabas 'placeHolder', unifícalo aquí
-                text: elementToEdit.props?.text || elementToEdit.props?.placeHolder || "Button",
-                disabled: elementToEdit.props?.disabled || false,
-                variant: elementToEdit.props?.variant || "default",
-                size: elementToEdit.props?.size || "sm"
+                placeHolder: elementToEdit.props?.componentProps?.placeHolder || "Button",
+                disabled: elementToEdit.props?.componentProps?.disabled || false,
+                variant: elementToEdit.props?.componentProps?.variant || "default",
+                size: elementToEdit.props?.componentProps?.size || "sm"
             });
         }
     }, [elementToEdit]);
@@ -42,6 +40,7 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
             columns: row.columns.map(col => {
                 if (col.id === elementToEdit.id) {
                     console.log("col", col);
+                    console.log(propsState)
 
                     // 🔴 1. Regeneramos el JSX visual del botón con las nuevas propiedades
                     const updatedVisualElement = (
@@ -49,29 +48,30 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
                             variant={propsState.variant}
                             size={propsState.size}
                             disabled={propsState.disabled}
-                        >
-                            {propsState.text}
-                        </ButtonCustom>
+                            placeHolder={propsState.placeHolder}
+                        />
+
                     );
-ARREGLAR EL PROPS
+                    console.log(updatedVisualElement)
                     // 🔴 2. Guardamos tanto el nuevo elemento visual como los props actualizados
                     return {
                         ...col,
                         element: React.cloneElement(updatedVisualElement, {
                             id: col.element?.props?.id,
                             ctype: col.element?.props?.ctype,
+
                             props: { ...col.element.props }
                         }),
                         props: {
                             ...col.props,
-                            ...propsState // Guarda 'text', 'disabled', etc.
+                            componentProps: { ...propsState } // Guarda 'text', 'disabled', etc.
                         }
                     };
                 }
                 return col;
             })
         })));
-
+        console.log(grid)
         // Cerramos el modal
         setElementToEdit(null);
     };
@@ -90,9 +90,9 @@ ARREGLAR EL PROPS
                             variant={propsState.variant}
                             size={propsState.size}
                             disabled={propsState.disabled}
-                        >
-                            {propsState.text}
-                        </ButtonCustom>
+                            placeHolder={propsState.placeHolder}
+                        />
+
                     </div>
 
                     {/* ✍️ Controles de edición */}
@@ -100,8 +100,8 @@ ARREGLAR EL PROPS
                         <Label htmlFor="btn-text">Texto del botón</Label>
                         <Input
                             id="btn-text"
-                            value={propsState.text}
-                            onChange={(e) => setPropsState(prev => ({ ...prev, text: e.target.value }))}
+                            value={propsState.placeHolder}
+                            onChange={(e) => setPropsState(prev => ({ ...prev, placeHolder: e.target.value }))}
                         />
                     </div>
 

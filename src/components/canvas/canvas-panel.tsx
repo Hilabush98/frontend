@@ -105,6 +105,7 @@ export function CanvasPanel({
                 if (col.element && (col.element as any).props?.id) {
                     elementType = String((col.element as any).props.id).split('-')[0];
                 }
+                console.log(col)
                 return { cellId: col.id, type: elementType, props: col.props, position: col.position, sizeCell: col.sizeCell };
             })
         }));
@@ -242,12 +243,12 @@ export function CanvasPanel({
                 const newId = `${activeId}-${Date.now()}`;
                 //const componenetType = 
                 const newElement = React.cloneElement(originalElement.props.children, { id: newId, ctype: originalElement.props.ctype });
-
+                console.log('ELEMENT NEW', newElement)
                 setGrid(prevGrid => prevGrid.map(row => ({
                     ...row,
                     columns: row.columns.map(col =>
                         // Si arrastramos una herramienta nueva a una celda ocupada, reemplaza el contenido
-                        col.id === overId ? { ...col, element: newElement, props: { ...col.props, componentProps: null } } : col
+                        col.id === overId ? { ...col, element: newElement, props: { ...col.props, ctype: newElement.props.ctype, componentProps: null } } : col
                     )
                 })));
             }
