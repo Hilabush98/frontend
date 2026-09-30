@@ -8,6 +8,7 @@ import { RestrictToVerticalAxis } from '@dnd-kit/abstract/modifiers';
 import { Plus, PlusIcon, TrashIcon, SaveIcon, Columns } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DialogAtomButton } from "./Dialog/DialogButton"
+import { DialogAtom } from './Dialog/DialogAtom'
 
 import { Draggable, Sortable, SortableItem } from './tool-panel/tools-panel-utils';
 import { Button, ButtonCustom } from '../ui/button';
@@ -160,7 +161,7 @@ export function CanvasPanel({
                 id: `cell-${generateId()}`,
                 element: null,
                 position: index,
-                sizeCell: numColumns
+                sizeCell: 1
             }));
 
             const newRow = {
@@ -310,6 +311,7 @@ export function CanvasPanel({
                                     <GridCell
                                         key={col.id}
                                         cell={col} // Pasamos el objeto completo
+                                        sizeCell={col.sizeCell}
                                         onDelete={handleDeleteCell}
                                         onEdit={handleEditCell}
                                         onToggleLock={handleToggleLock} // Pasamos la nueva función
@@ -326,7 +328,7 @@ export function CanvasPanel({
                     </Display>
                 </div>
             </DragDropProvider>
-            <DialogAtomButton elementToEdit={elementToEdit} grid={grid} setGrid={setGrid} setElementToEdit={setElementToEdit} />
+            <DialogAtom elementToEdit={elementToEdit} grid={grid} setGrid={setGrid} setElementToEdit={setElementToEdit} />
 
         </div >
     );

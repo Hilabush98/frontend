@@ -11,23 +11,31 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
 
     // 1. Estado inicializado con valores por defecto para evitar warnings de inputs descontrolados
     const [propsState, setPropsState] = useState<any>({
-        text: "Button",
+        placeHolder: "Button",
         disabled: false,
         variant: "default",
         size: "sm"
     });
+    const [cellProps, setCellProps] = useState<any>({ sizecell: 1 })
+
 
 
     // 2. Cargamos las propiedades existentes al abrir el modal (Unificando propiedades)
     useEffect(() => {
         if (elementToEdit) {
+            console.log(elementToEdit)
             setPropsState({
                 // Usamos 'text' de forma consistente. Si antes usabas 'placeHolder', unifícalo aquí
                 placeHolder: elementToEdit.props?.componentProps?.placeHolder || "Button",
                 disabled: elementToEdit.props?.componentProps?.disabled || false,
                 variant: elementToEdit.props?.componentProps?.variant || "default",
-                size: elementToEdit.props?.componentProps?.size || "sm"
+                size: elementToEdit.props?.componentProps?.size || "sm",
+                //                sizeCell: elementToEdit.sizeCell
             });
+            setCellProps({
+                sizeCell: elementToEdit.sizeCell
+            })
+
         }
     }, [elementToEdit]);
 
@@ -39,8 +47,6 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
             ...row,
             columns: row.columns.map(col => {
                 if (col.id === elementToEdit.id) {
-                    console.log("col", col);
-                    console.log(propsState)
 
                     // 🔴 1. Regeneramos el JSX visual del botón con las nuevas propiedades
                     const updatedVisualElement = (
@@ -56,10 +62,10 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
                     // 🔴 2. Guardamos tanto el nuevo elemento visual como los props actualizados
                     return {
                         ...col,
+                        sizeCell: cellProps.sizeCell,
                         element: React.cloneElement(updatedVisualElement, {
                             id: col.element?.props?.id,
                             ctype: col.element?.props?.ctype,
-
                             props: { ...col.element.props }
                         }),
                         props: {
@@ -104,7 +110,14 @@ export const DialogAtomButton = ({ elementToEdit, grid, setGrid, setElementToEdi
                             onChange={(e) => setPropsState(prev => ({ ...prev, placeHolder: e.target.value }))}
                         />
                     </div>
-
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="btn-text">Size de la celda</Label>
+                        <Input
+                            id="btn-text"
+                            value={cellProps.sizeCell}
+                            onChange={(e) => setCellProps(prev => ({ ...prev, sizeCell: e.target.value }))}
+                        />
+                    </div>
                     <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                         <input
                             type="checkbox"

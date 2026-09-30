@@ -5,165 +5,156 @@ import { Button, ButtonCustom } from '../../ui/button'
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { any } from "zod";
+import { DialogAtomButton } from "./DialogButton";
+import { ATOM_REGISTRY, PropField } from "./Registry";
 
-/*const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
-    console.log('Component', elementToEdit)
-    console.log('grid', grid)
-    /*const saveProps = () => {
-        setGrid(prevGrid => prevGrid.map(row => ({
-            ...row,
-            columns: row.columns.map(col => {
-                if (col.id === cellId) {
-                    return {
-                        ...col,
-                        props: {
-                            ...col.props,
-                            isLocked: !col.props?.isLocked
-                        }
-                    };
-                }
-                return col;
-            })
-        })));
-    }*//*
-return (
-<Dialog open={!!elementToEdit} >
-<DialogContent>
-<DialogHeader>
-<DialogTitle>Editar Propiedades del Átomo</DialogTitle>
-</DialogHeader>
 
-<div className="flex flex-col gap-4 py-4">
-{elementToEdit?.element ? elementToEdit?.element : <></>}
-</div>
+export const DialogAtom = ({ elementToEdit, setGrid, setElementToEdit }: any) => {
+    const [sizeCell, setSizeCell] = useState<number>(1);
+    const [componentProps, setComponentProps] = useState<Record<string, any>>({});
 
-<DialogFooter>
-<Button variant="outline" onClick={() => setElementToEdit(null)}>Cancelar</Button>
-<Button onClick={() => { setElementToEdit(elementToEdit.element.props.disabled) }}>Guardar Cambios</Button>
-</DialogFooter>
-</DialogContent>
-</Dialog >
+    // 1. Identificamos la configuración según el tipo del elemento (ctype)
+    const atomType = elementToEdit?.ctype || "button";
+    const definition = ATOM_REGISTRY[atomType];
 
-)
-}*/
-
-export const DialogAtom = ({ elementToEdit, grid, setGrid, setElementToEdit }: any) => {
-    type CellData = { id: string; element: React.ReactNode | null; props?: { isLocked?: boolean;[key: string]: any }, position: number };
-    type RowData = { id: string; columns: CellData[], };
-
-    // 1. Estado local de propiedades a editar
-    console.log(grid)
-    const [propsState, setPropsState] = useState<any>({});
-    console.log("element:", elementToEdit)
-    // 2. Cargamos las propiedades existentes al abrir el modal
     useEffect(() => {
-        console.log('ElementToEdit', elementToEdit?.props?.componentProps)
         if (elementToEdit) {
-            setPropsState({
-                text: elementToEdit.props?.componentProps?.placeHolder || "Button",
-                disabled: elementToEdit.props?.componentProps?.disabled || false
+            setSizeCell(elementToEdit.size || 1);
+            // Tomamos las props guardadas o las por defecto del registro
+            setComponentProps({
+                ...(definition?.defaultProps || {}),
+                ...(elementToEdit.props || {}),
             });
         }
-    }, [elementToEdit]);
+    }, [elementToEdit, definition]);
 
-    const componentList = (props: any) => {
-        const { ctype } = props
-        switch (ctype) {
-            case "button": (<Button
-                variant={props.variant || "default"}
-                size={props.size || "sm"}
-                disabled={props.disabled}
-            >
-                {props.text || "Button"}
-            </Button>)
-                break;
-            case "label":
-                break;
-            case "combo":
-                break;
-            case "textArea":
-                break;
-            case "input":
-                break;
-            default:
-                break;
-        }
-    }
-    // 3. Función para guardar los cambios en el grid
-    const saveProps = () => {
-        if (!elementToEdit) return;
+    if (!elementToEdit || !definition) return null;
 
-        setGrid((prevGrid: RowData[]) => prevGrid.map(row => ({
-            ...row,
-            columns: row.columns.map(col => {
-                if (col.id === elementToEdit.id) {
-                    console.log("col", col)
-                    // 🔴 1. Regeneramos el JSX visual del botón con las nuevas propiedades
-                    const updatedVisualElement = componentList()
+    // Componente visual correspondiente
+    const PreviewComponent = definition.component;
 
-                    // 🔴 2. Guardamos tanto el nuevo elemento visual como los props actualizados
-                    return {
-                        ...col,
-                        element: React.cloneElement(updatedVisualElement, {
-                            id: col.element?.props?.id,
-                            ctype: col.element?.props?.ctype
-                        }),
-
-                        props: {
-                            ...col.props,
-                            componentProps: { ...propsState }
-                        },
-                        position: col.position
-                    };
-                }
-                return col;
-            })
-        })));
-
-        // Cerramos el modal
+    // Guardado limpio: Solo guardamos DATOS (sin JSX clonado)
+    const handleSave = () => {
+        setGrid((prevGrid: any[]) =>
+            prevGrid.map((row) => ({
+                ...row,
+                columns: row.columns.map((col: any) => {
+                    if (col.id === elementToEdit.id) {
+                        return {
+                            ...col,
+                            size: Number(sizeCell),
+                            ctype: atomType,
+                            props: componentProps, // Guardamos estado puro
+                        };
+                    }
+                    return col;
+                }),
+            }))
+        );
         setElementToEdit(null);
     };
 
+    // Renderizador automático de cada campo
+    const renderFieldControl = (field: PropField) => {
+        const value = componentProps[field.key];
+
+        switch (field.control) {
+            case "boolean":
+                return (
+                    <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={value ?? false}
+                            onChange={(e) =>
+                                setComponentProps((prev) => ({ ...prev, [field.key]: e.target.checked }))
+                            }
+                            className="w-4 h-4 rounded border-gray-300 text-primary"
+                        />
+                        {field.label}
+                    </label>
+                );
+
+            case "select":
+                return (
+                    <div className="flex flex-col gap-1">
+                        <Label>{field.label}</Label>
+                        <select
+                            value={value ?? ""}
+                            onChange={(e) =>
+                                setComponentProps((prev) => ({ ...prev, [field.key]: e.target.value }))
+                            }
+                            className="border rounded-md px-3 py-1.5 text-sm bg-background"
+                        >
+                            {field.options?.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                );
+
+            case "number":
+            case "text":
+            default:
+                return (
+                    <div className="flex flex-col gap-1">
+                        <Label>{field.label}</Label>
+                        <Input
+                            type={field.control === "number" ? "number" : "text"}
+                            value={value ?? ""}
+                            onChange={(e) =>
+                                setComponentProps((prev) => ({
+                                    ...prev,
+                                    [field.key]: field.control === "number" ? Number(e.target.value) : e.target.value,
+                                }))
+                            }
+                        />
+                    </div>
+                );
+        }
+    };
 
     return (
         <Dialog open={!!elementToEdit} onOpenChange={(open) => !open && setElementToEdit(null)}>
-            <DialogContent>
+            <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Editar Propiedades del Átomo</DialogTitle>
+                    <DialogTitle>Editar {definition.name}</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 py-4">
-                    <div className="flex justify-center p-4 border rounded-md bg-muted/20">
-                        {elementToEdit?.element}
+                <div className="flex flex-col gap-4 py-3">
+                    {/* 👁️ Vista previa en tiempo real */}
+                    <div className="flex justify-center items-center min-h-[90px] p-4 border rounded-lg bg-muted/20">
+                        <PreviewComponent {...componentProps} />
                     </div>
 
-                    {/* Controles de edición */}
-                    <div className="flex flex-col gap-2">
-                        <Label>Texto del botón</Label>
+                    {/* 📐 Configuración general de la celda */}
+                    <div className="flex flex-col gap-1">
+                        <Label>Ancho de columna (1 a 6)</Label>
                         <Input
-                            value={propsState.text}
-                            onChange={(e) => setPropsState((prev: any) => ({ ...prev, text: e.target.value }))}
+                            type="number"
+                            min={1}
+                            max={6}
+                            value={sizeCell}
+                            onChange={(e) => setSizeCell(Number(e.target.value))}
                         />
                     </div>
 
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={propsState.disabled}
-                            onChange={(e) => setPropsState((prev: any) => ({ ...prev, disabled: e.target.checked }))}
-                            className="w-4 h-4"
-                        />
-                        Deshabilitado
-                    </label>
+                    <div className="border-t my-1" />
+
+                    {/* ⚙️ Propiedades dinámicas auto-generadas */}
+                    <div className="flex flex-col gap-3">
+                        {definition.editableFields.map((field) => (
+                            <div key={field.key}>{renderFieldControl(field)}</div>
+                        ))}
+                    </div>
                 </div>
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setElementToEdit(null)}>
                         Cancelar
                     </Button>
-                    <Button onClick={saveProps}>
-                        Guardar Cambios
-                    </Button>
+                    <Button onClick={handleSave}>Guardar Cambios</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
